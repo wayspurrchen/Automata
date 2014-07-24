@@ -24,23 +24,7 @@ function randomInt(max, min) {
 
 function setup() {
 	cellCache = new CellCacheQueue();
-	console.log(cellCache.getCount());
-	makeCells();
-}
-
-function makeCells() {
-	for (var i = 0; i < GRID_WIDTH; i++) {
-		cells[i] = [];
-		for (var j = 0; j < GRID_HEIGHT; j++) {
-			cells[i][j] = new Cell(i, j, 0);
-		}
-	}
-	cells[0][0].setOwner(1);
-	cells[0][GRID_HEIGHT - 1].setOwner(2);
-	cells[GRID_WIDTH - 1][GRID_HEIGHT - 1].setOwner(3);
-	cells[GRID_WIDTH - 1][0].setOwner(4);
-	// cells[GRID_WIDTH / 3][GRID_WIDTH / 3].setOwner(5);
-	// cells[GRID_WIDTH / 2][GRID_WIDTH / 2].setOwner(6);
+	
 }
 
 setup();

@@ -10,11 +10,16 @@ function CellCacheQueue() {
 	// one cell at a time
 	var cellCount = GRID_WIDTH * GRID_HEIGHT * GRID_CLUSTER_SIZE;
 
-	this.enqueue = function(cell) {
+	this.enqueueCell = function(cell) {
+		cell.view.rect.remove();
 		queue.push(cell);
 	};
-	this.dequeue = function(cell) {
-		return queue.shift();
+	this.dequeueNewCell = function(x, y, owner) {
+		var cell = queue.shift();
+		cell.move(x, y);
+		cell.setOwner(owner);
+		layer.add(cell.attachView());
+		return cell;
 	};
 	this.getCount = function() {
 		return queue.length;
@@ -22,12 +27,16 @@ function CellCacheQueue() {
 
 	for (var i = 0; i < cellCount; i++) {
 		// Create and enqueue a bunch of cached cels
-		var cachedCell = new Cell(0, 0, 0, true);
-		this.enqueue(cachedCell);
+		var cachedCell = new Cell();
+		this.enqueueCell(cachedCell);
 	}
 }
 
 function CellView(x, y, fill, cached) {
+	x = x || -1;
+	y = y || -1;
+	fill = fill || undefined;
+
 	this.rect = new Kinetic.Rect({
 		width: GRID_CELL_SIZE,
 		height: GRID_CELL_SIZE,
@@ -36,53 +45,59 @@ function CellView(x, y, fill, cached) {
 		fill: fill,
 		opacity: 0.7
 	});
-	if (!cached) {
-		layer.add(this.rect);
-	}
 }
 CellView.prototype.move = function(x, y) {	
 	this.rect.setAttr('x', x * GRID_CELL_SIZE);
 	this.rect.setAttr('y', y * GRID_CELL_SIZE);
 };
 CellView.prototype.setOwner = function(color) {
-	this.rect.setAttr('fill', color)
+	this.rect.setAttr('fill', color);
 };
+CellView.prototype.attach = function() {
+	layer.add(this.rect);
+};
+CellView.prototype.detach = function() {
+	this.rect.remove();
+}
 
 // If cached == true, don't add this cell to the layer
-function Cell(x, y, owner, cached) {
-	this.view = new CellView(x, y, owners[owner], cached);
+function Cell() {
+	this.health = CELL_START_HEALTH;
+	this.view   = new CellView();
+}
+Cell.prototype.attachView = function() {
+	this.view.attach();
+};
+Cell.prototype.detachView = function() {
+	this.view.detach();
+};
+Cell.prototype.move = function(x, y) {
 	this.x = x;
 	this.y = y;
-	this.health = CELL_START_HEALTH;
-	this.owner  = owner;
-}
-Cell.prototype.movedCells = [];
-Cell.prototype.move = function(cell) {
-	cell.setOwner(this.owner);
-	this.setOwner(0);
+	this.view.move(x, y);
+	this.currentSpace.disassociateCell(this);
+	this.currentSpace = Grid.getSpace(x, y);
+	this.currentSpace.associateCell(this);
 };
 Cell.prototype.setOwner = function(owner) {
 	this.movedThisTurn = true;
-	this.movedCells.push(this);
 	this.owner = owner;
 	this.view.setOwner(owners[owner]);
 };
+Cell.prototype.getCurrentSpace = function() {
+	return this.currentSpace;
+};
 Cell.prototype.getSurroundingCells = function() {
 	var surroundingCells = {
+		allCells: [],
 		cells: {},
 		owners: {}
 	};
-	if (this.x + 1 < GRID_WIDTH) {
-		surroundingCells.cells.right = cells[this.x + 1][this.y];
-	}
-	if (this.x - 1 >= 0) {
-		surroundingCells.cells.left = cells[this.x - 1][this.y];
-	}
-	if (this.y + 1 < GRID_HEIGHT) {
-		surroundingCells.cells.bottom = cells[this.x][this.y + 1];
-	}
-	if (this.y - 1 >= 0) {
-		surroundingCells.cells.top = cells[this.x][this.y - 1];
+	var neighborhood = this.getCurrentSpace().getNeighborhoodSpacees();
+	for (var i in neighborhood) {
+		var neighbor = neighborhood[i];
+		surroundingCells.cells[i] = neighbor;
+		surroundingCells.allCells = surroundingCells.allCells.concat(neighbor);
 	}
 
 	// Accumulate count of cell owners in owners property
