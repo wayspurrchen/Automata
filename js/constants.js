@@ -1,0 +1,6 @@
+var GRID_WIDTH  = 60;
+var GRID_HEIGHT = 60;
+var GRID_CELL_SIZE = 5;
+var GRID_CLUSTER_SIZE = 3;
+
+var CELL_START_HEALTH = 3;
