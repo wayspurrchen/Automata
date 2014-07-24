@@ -1,5 +1,5 @@
-var GRID_WIDTH  = 120;
-var GRID_HEIGHT = 120;
+var GRID_WIDTH  = 60;
+var GRID_HEIGHT = 60;
 var GRID_CELL_SIZE = 5;
 
 var stage = new Kinetic.Stage({
@@ -40,7 +40,7 @@ function CellView(x, y, fill) {
 		x: x * GRID_CELL_SIZE,
 		y: y * GRID_CELL_SIZE,
 		fill: fill,
-		fillAlpha: 0.4
+		opacity: 0.7
 	});
 	layer.add(this.rect);
 }
@@ -230,9 +230,7 @@ function makeCells() {
 	cells[0][GRID_HEIGHT - 1].setOwner(2);
 	cells[GRID_WIDTH - 1][GRID_HEIGHT - 1].setOwner(3);
 	cells[GRID_WIDTH - 1][0].setOwner(4);
-	cells[90][30].setOwner(5);
-	cells[30][30].setOwner(6);
-	cells[90][90].setOwner(7);
+	cells[GRID_WIDTH / 2 - 1][GRID_HEIGHT / 2 - 1].setOwner(5);
 }
 
 setup();
@@ -245,11 +243,26 @@ function iterateCells(callback) {
 	}
 }
 
+function iterateRandomCells(callback) {
+	var randomCells = [];
+	iterateCells(function(cell) {
+		randomCells.push(cell);
+	});
+	randomCells = _.shuffle(randomCells);
+	var length = randomCells.length;
+	for (var i = 0; i < length; i++) {
+		callback(randomCells[i]);
+	}
+}
+
+var turnCounter = 0;
+
 function turn() {
-	console.log('Taking turn!');
+	turnCounter++;
+	// console.log('Taking turn!');
 	var ownerRecord = {};
 
-	iterateCells(function(cell) {
+	iterateRandomCells(function(cell) {
 		cell.takeTurn();
 	});
 
@@ -280,10 +293,13 @@ function turn() {
 		$('#mutation-points').append(i + ': ' + mutationPoints[i] + '; ');
 	}
 
-
-	console.log(ownerRecord);
-	stage.draw();
-	setTimeout(turn, 100);
+	// Update hit graph every 10 frames
+	if (turnCounter % 10 == 0) {
+		layer.draw();
+	} else {
+		layer.drawScene();
+	}
+	setTimeout(turn, 10);
 }
 
 turn();
