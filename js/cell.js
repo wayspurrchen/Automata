@@ -1,50 +1,52 @@
-var cells = [];
-
 // Holds queued cells for reuse after destruction. More efficient to hide cells
 // and move them off-canvas.
 // NOTE 2014-07-23: FURTHER OPTIMIZATION: have each cell that's actually on-the-grid
 // draw itself. occasionally render hitgraphs
-function CellCacheQueue() {
+function CellCacheQueue(game) {
+	this.game = game;
+
 	var queue = [];
 	// We want to cache as many cells as there are, times however many cells can be on
 	// one cell at a time
-	var cellCount = GRID_WIDTH * GRID_HEIGHT * GRID_CLUSTER_SIZE;
+	var cellCount =
+		this.game.Constants.GRID_WIDTH *
+		this.game.Constants.GRID_HEIGHT *
+		this.game.Constants.GRID_CLUSTER_SIZE;
 
 	this.enqueueCell = function(cell) {
-		cell.view.rect.remove();
 		queue.push(cell);
 	};
-	this.dequeueNewCell = function(x, y, owner) {
+	this.dequeueBlankCell = function() {
 		var cell = queue.shift();
-		cell.move(x, y);
-		cell.setOwner(owner);
-		layer.add(cell.attachView());
 		return cell;
 	};
 	this.getCount = function() {
 		return queue.length;
 	};
-
-	for (var i = 0; i < cellCount; i++) {
-		// Create and enqueue a bunch of cached cels
-		var cachedCell = new Cell();
-		this.enqueueCell(cachedCell);
-	}
 }
 
-function CellView(x, y, fill, cached) {
+function CellView(game, x, y, fill) {
 	x = x || -1;
 	y = y || -1;
 	fill = fill || undefined;
 
 	this.rect = new Kinetic.Rect({
-		width: GRID_CELL_SIZE,
-		height: GRID_CELL_SIZE,
-		x: x * GRID_CELL_SIZE,
-		y: y * GRID_CELL_SIZE,
+		width: game.Constants.GRID_CELL_SIZE,
+		height: game.Constants.GRID_CELL_SIZE,
+		x: x * game.Constants.GRID_CELL_SIZE,
+		y: y * game.Constants.GRID_CELL_SIZE,
 		fill: fill,
 		opacity: 0.7
 	});
+	this.draw = function() {
+		this.rect.drawScene();
+	};
+	this.show = function() {
+		this.rect.show();
+	};
+	this.hide = function() {
+		this.rect.hide();
+	};
 }
 CellView.prototype.move = function(x, y) {	
 	this.rect.setAttr('x', x * GRID_CELL_SIZE);
@@ -53,30 +55,77 @@ CellView.prototype.move = function(x, y) {
 CellView.prototype.setOwner = function(color) {
 	this.rect.setAttr('fill', color);
 };
-CellView.prototype.attach = function() {
-	layer.add(this.rect);
-};
-CellView.prototype.detach = function() {
-	this.rect.remove();
-}
 
-// If cached == true, don't add this cell to the layer
-function Cell() {
-	this.health = CELL_START_HEALTH;
-	this.view   = new CellView();
+// Cells start inactive, must be activated
+function Cell(game, x, y) {
+	this.game   = game;
+	this.x      = x;
+	this.y      = y;
+	this.view   = new CellView(game, x, y);
+	this.active = false;
+	this.draw = function() {
+		this.view.draw();
+	};
+	this.show = function() {
+		this.view.show();
+	};
+	this.hide = function() {
+		this.view.hide();
+	};
+	// Enable cell's existence
+	this.activate = function(owner) {
+		// Housekeeping
+		this.health = this.game.Constants.CELL_START_HEALTH;
+		this.active = true;
+		this.owner  = owner;
+		this.show();
+		// Set owner
+		this.view.setOwner(owner.color);
+		// Add to grid/associate with space
+		this.game.grid.addCell(this.x, this.y, this);
+		// Update inactive/active cell sets
+		_.pull(Cell.inactiveCells, this);
+		Cell.activeCells.push(this);
+	};
+	// Remove the cell from play and from the canvas
+	this.deactivate = function() {
+		// Disable owner
+		this.owner.disassociateCell(this);
+		this.owner  = null;
+		this.active = false;
+		this.hide();
+		// Remove from grid/deassociate from space
+		this.game.grid.detachCell(this);
+		// Update inactive/active cell sets
+		_.pull(Cell.activeCells, this);
+		Cell.inactiveCells.push(this);
+	};
 }
-Cell.prototype.attachView = function() {
-	this.view.attach();
+Cell.activeCells = [];
+Cell.inactiveCells = [];
+Cell.iterateActive = function(callback) {
+	for (var i = 0; i < Cell.activeCells.length; i++) {
+		var cell = Cell.activeCells[i];
+		callback(cell);
+	}
 };
-Cell.prototype.detachView = function() {
-	this.view.detach();
+Cell.iterateRandomActive = function(callback) {
+	var randomCells = [];
+	Cell.iterateActive(function(cell) {
+		randomCells.push(cell);
+	});
+	randomCells = _.shuffle(randomCells);
+	var length = randomCells.length;
+	for (var i = 0; i < length; i++) {
+		callback(randomCells[i]);
+	}
 };
 Cell.prototype.move = function(x, y) {
 	this.x = x;
 	this.y = y;
 	this.view.move(x, y);
 	this.currentSpace.disassociateCell(this);
-	this.currentSpace = Grid.getSpace(x, y);
+	this.currentSpace = this.game.grid.getSpace(x, y);
 	this.currentSpace.associateCell(this);
 };
 Cell.prototype.setOwner = function(owner) {
@@ -93,7 +142,7 @@ Cell.prototype.getSurroundingCells = function() {
 		cells: {},
 		owners: {}
 	};
-	var neighborhood = this.getCurrentSpace().getNeighborhoodSpacees();
+	var neighborhood = this.getCurrentSpace().getNeighborhoodSpaces();
 	for (var i in neighborhood) {
 		var neighbor = neighborhood[i];
 		surroundingCells.cells[i] = neighbor;
