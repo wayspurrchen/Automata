@@ -25,35 +25,35 @@ function CellCacheQueue(game) {
 	};
 }
 
-function CellView(game, x, y, fill) {
-	x = x || -1;
-	y = y || -1;
-	fill = fill || undefined;
+function CellView(game, cell, fill) {
+	this.game = game;
+	var ctx = this.game.bufferContext;
 
-	this.rect = new Kinetic.Rect({
-		width: game.Constants.GRID_CELL_SIZE,
-		height: game.Constants.GRID_CELL_SIZE,
-		x: x * game.Constants.GRID_CELL_SIZE,
-		y: y * game.Constants.GRID_CELL_SIZE,
-		fill: fill,
-		opacity: 0.7
-	});
+	this.opacity = 0.333;
+	this.cell = cell;
+
 	this.draw = function() {
-		this.rect.drawScene();
+		if (!this.visible) return;
+		ctx.fillStyle = this.fillStyle;
+		ctx.fillRect(
+			this.cell.x,
+			this.cell.y,
+			this.cell.x * this.game.Constants.GRID_CELL_SIZE,
+			this.cell.y * this.game.Constants.GRID_CELL_SIZE
+		);
 	};
 	this.show = function() {
-		this.rect.show();
+		this.visible = true;
+		// this.rect.show();
 	};
 	this.hide = function() {
-		this.rect.hide();
+		this.visible = false;
+		// this.rect.hide();
 	};
 }
-CellView.prototype.move = function(x, y) {	
-	this.rect.setAttr('x', x * GRID_CELL_SIZE);
-	this.rect.setAttr('y', y * GRID_CELL_SIZE);
-};
 CellView.prototype.setOwner = function(color) {
-	this.rect.setAttr('fill', color);
+	var rgb = hexToRgb(color);
+	this.fillStyle = "rgba(" + rgb["r"] + "," +rgb["g"] + "," + rgb["b"] + ",0.333)";
 };
 
 // Cells start inactive, must be activated
@@ -61,7 +61,7 @@ function Cell(game, x, y) {
 	this.game   = game;
 	this.x      = x;
 	this.y      = y;
-	this.view   = new CellView(game, x, y);
+	this.view   = new CellView(game, this);
 	this.active = false;
 	this.draw = function() {
 		this.view.draw();
@@ -73,15 +73,18 @@ function Cell(game, x, y) {
 		this.view.hide();
 	};
 	// Enable cell's existence
-	this.activate = function(owner) {
+	this.activate = function(owner, x, y, moved) {
 		// Housekeeping
 		this.health = this.game.Constants.CELL_START_HEALTH;
 		this.active = true;
 		this.owner  = owner;
+		this.movedThisTurn = moved;
 		this.show();
 		// Set owner
 		this.view.setOwner(owner.color);
 		// Add to grid/associate with space
+		this.x = x;
+		this.y = y;
 		this.game.grid.addCell(this.x, this.y, this);
 		// Update inactive/active cell sets
 		_.pull(Cell.inactiveCells, this);
@@ -120,12 +123,13 @@ Cell.iterateRandomActive = function(callback) {
 		callback(randomCells[i]);
 	}
 };
-Cell.prototype.move = function(x, y) {
-	this.x = x;
-	this.y = y;
-	this.view.move(x, y);
+Cell.prototype.move = function(space) {
+	this.x = space.x;
+	this.y = space.y;
+	this.movedThisTurn = true;
+	// this.view.move(this.x, this.y);
 	this.currentSpace.disassociateCell(this);
-	this.currentSpace = this.game.grid.getSpace(x, y);
+	this.currentSpace = this.game.grid.getSpace(this.x, this.y);
 	this.currentSpace.associateCell(this);
 };
 Cell.prototype.setOwner = function(owner) {
@@ -136,30 +140,22 @@ Cell.prototype.setOwner = function(owner) {
 Cell.prototype.getCurrentSpace = function() {
 	return this.currentSpace;
 };
-Cell.prototype.getSurroundingCells = function() {
-	var surroundingCells = {
-		allCells: [],
-		cells: {},
-		owners: {}
-	};
-	var neighborhood = this.getCurrentSpace().getNeighborhoodSpaces();
-	for (var i in neighborhood) {
-		var neighbor = neighborhood[i];
-		surroundingCells.cells[i] = neighbor;
-		surroundingCells.allCells = surroundingCells.allCells.concat(neighbor);
-	}
-
-	// Accumulate count of cell owners in owners property
-	for (var i in surroundingCells.cells) {
-		if (surroundingCells.cells[i].owner == 0 ||
-			surroundingCells.cells[i].owner == this.owner) continue;
-		if (surroundingCells.owners[surroundingCells.cells[i].owner]) {
-			surroundingCells.owners[surroundingCells.cells[i].owner]++;
-		} else {
-			surroundingCells.owners[surroundingCells.cells[i].owner] = 1;
-		}
-	}
-	return surroundingCells;
+// Cell.prototype.getSurroundingCells = function() {
+// 	var surroundingCells = {
+// 		allCells: [],
+// 		cells: {},
+// 		owners: {}
+// 	};
+// 	var neighborhood = this.getNeighborhood();
+// 	for (var i in neighborhood) {
+// 		var neighbor = neighborhood[i];
+// 		surroundingCells.cells[i] = neighbor;
+// 		surroundingCells.allCells = surroundingCells.allCells.concat(neighbor);
+// 	}
+// 	return surroundingCells;
+// };
+Cell.prototype.getNeighborhood = function() {
+	return this.getCurrentSpace().getNeighborhood();
 };
 Cell.prototype.takeTurn = function() {
 	if (this.owner == 0) return;
@@ -168,52 +164,52 @@ Cell.prototype.takeTurn = function() {
 		return;
 	}
 
-	var surroundingCells = this.getSurroundingCells();
+	var neighborhood = this.getNeighborhood();
 
-	var conquered = this.checkConquered(surroundingCells);
-	if (conquered.result) {
-		this.setOwner(conquered.conqueror);
-		return;
-	}
+	// var fight = this.checkFight(neighborhood.center);
+	// if (fight.result) {
+	// 	if (fight.winner == this) {
+	// 		fight.loser.setOwner(this.owner);
+	// 		fight.loser.movedThisTurn = true;
+	// 	} else {
+	// 		this.setOwner(fight.winner.owner);
+	// 		fight.winner.movedThisTurn = true;
+	// 	}
+	// 	return;
+	// }
 
-	var fight = this.checkFight(surroundingCells);
-	if (fight.result) {
-		if (fight.winner == this) {
-			fight.loser.setOwner(this.owner);
-			fight.loser.movedThisTurn = true;
-		} else {
-			this.setOwner(fight.winner.owner);
-			fight.winner.movedThisTurn = true;
-		}
-		return;
-	}
-
-	var randomUnoccupied = this.getRandomUnoccupiedNeighbor();
-	if (randomUnoccupied) {
+	var randNeighbor = this.getRandNeighborWithSpace();
+	if (randNeighbor) {
 		// Coin toss to move or reproduce into empty space
 		if (randomInt(2) == 0) {
-			this.divide(randomUnoccupied);
+			this.divide(randNeighbor);
 		} else {
-			this.move(randomUnoccupied);
+			this.move(randNeighbor);
 		}
 	}
-};
-Cell.prototype.getRandomUnoccupiedNeighbor = function() {
-	var surroundingCells = this.getSurroundingCells();
 
-	var unoccupiedCells = [];
-	for (var i in surroundingCells.cells) {
-		if (surroundingCells.cells[i].owner == 0) {
-			unoccupiedCells.push(surroundingCells.cells[i]);
+	this.movedThisTurn = true;
+};
+// Gets a random neighbor with space
+Cell.prototype.getRandNeighborWithSpace = function() {
+	var neighborhood = this.getNeighborhood();
+
+	var spaces = [];
+	for (var i in neighborhood) {
+		// If the number of cells in the neighborhood space are less than
+		// the maximum allowed
+		if (!neighborhood[i]) continue;
+		if (neighborhood[i].cells.length < this.game.Constants.GRID_CLUSTER_SIZE) {
+			spaces.push(neighborhood[i]);
 		}
 	}
-	if (unoccupiedCells.length > 0) {
-		return unoccupiedCells[randomInt(unoccupiedCells.length)];
+	if (spaces.length > 0) {
+		return spaces[randomInt(spaces.length)];
 	}
 };
 // Divide into a given cell
-Cell.prototype.divide = function(cell) {
-	cell.setOwner(this.owner);
+Cell.prototype.divide = function(space) {
+	this.owner.createCell(space.x, space.y, true);
 };
 // Check whether or not this cell gets eaten by surrounding cells
 Cell.prototype.checkConquered = function(surroundingCells) {

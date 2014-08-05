@@ -2,7 +2,6 @@
 <html>
 <head>
 	<script src="lib/jquery.js"></script>
-	<script src="lib/kinetic-v5.1.0.min.js"></script>
 	<script src="lib/lodash.min.js"></script>
 </head>
 <body>
@@ -14,14 +13,17 @@
 		<li>Cells surrounded by three or more of the same opponent are consumed</li>
 	</ul>
 	<div id="mutation-points"></div>
-	<div id="container"></div>
+	<div id="container">
+		<canvas id="canvas">
+		</canvas>
+	</div>
 	<script src="js/constants.js"></script>
 	<script src="js/grid.js"></script>
 	<script src="js/player.js"></script>
 	<script src="js/cell.js"></script>
 	<script src="js/game.js"></script>
 	<script>
-		var game = new AutomataGame('container');
+		var game = new AutomataGame('container', $('#canvas')[0]);
 		game.start();
 	</script>
 </body>

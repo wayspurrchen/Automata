@@ -1,4 +1,3 @@
-// KineticJS stage
 function Grid(game, width, height, containerSelector) {
 	this.game = game;
 
@@ -6,25 +5,14 @@ function Grid(game, width, height, containerSelector) {
 	this.width  = width;
 	this.height = height;
 
-	this.kineticStage = new Kinetic.Stage({
-		container: containerSelector,
-		width: width * game.Constants.GRID_CELL_SIZE,
-		height: height * game.Constants.GRID_CELL_SIZE
-	});
-
-	this.kineticLayer = new Kinetic.Layer();
-	this.kineticStage.add(this.kineticLayer);
-
 	// Removes cells from the grid entirely
 	this.addCell = function(x, y, cell) {
 		var space = this.getSpace(x, y);
 		space.associateCell(cell);
-		this.kineticLayer.add(cell.view.rect);
 	};
 	this.detachCell = function(x, y, cell) {
 		var space = this.getSpace(x, y);
 		space.disassociateCell(cell);
-		cell.view.rect.remove();
 	};
 
 	function Space(grid, x, y) {
@@ -34,31 +22,32 @@ function Grid(game, width, height, containerSelector) {
 		this.cells = [];
 	}
 	Space.prototype.getTopSpace = function() {
-		return Grid.getSpace(this.x, this.y - 1);
+		return this.grid.getSpace(this.x, this.y - 1);
 	};
 	Space.prototype.getBottomSpace = function() {
-		return Grid.getSpace(this.x, this.y + 1);
+		return this.grid.getSpace(this.x, this.y + 1);
 	};
 	Space.prototype.getLeftSpace = function() {
-		return Grid.getSpace(this.x - 1, this.y);
+		return this.grid.getSpace(this.x - 1, this.y);
 	};
 	Space.prototype.getRightSpace = function() {
-		return Grid.getSpace(this.x + 1, this.y);
+		return this.grid.getSpace(this.x + 1, this.y);
 	};
 	Space.prototype.getTopLeftSpace = function() {
-		return Grid.getSpace(this.x - 1, this.y - 1);
+		return this.grid.getSpace(this.x - 1, this.y - 1);
 	};
 	Space.prototype.getTopRightSpace = function() {
-		return Grid.getSpace(this.x + 1, this.y - 1);
+		return this.grid.getSpace(this.x + 1, this.y - 1);
 	};
 	Space.prototype.getBottomLeftSpace = function() {
-		return Grid.getSpace(this.x - 1, this.y + 1);
+		return this.grid.getSpace(this.x - 1, this.y + 1);
 	};
 	Space.prototype.getBottomRightSpace = function() {
-		return Grid.getSpace(this.x + 1, this.y + 1);
+		return this.grid.getSpace(this.x + 1, this.y + 1);
 	};
-	Space.prototype.getNeighborhoodSpaces = function() {
+	Space.prototype.getNeighborhood = function() {
 		return {
+			center: this,
 			top: this.getTopSpace(),
 			right: this.getRightSpace(),
 			bottom: this.getBottomSpace(),
@@ -70,8 +59,12 @@ function Grid(game, width, height, containerSelector) {
 		};
 	};
 	Space.prototype.associateCell = function(cell) {
-		cell.currentSpace = this;
-		this.cells.push(cell);
+		if (this.cells.length < this.grid.game.Constants.GRID_CLUSTER_SIZE) {
+			cell.currentSpace = this;
+			this.cells.push(cell);
+		} else {
+			throw new Error('shouldn\'t be trying to do this!!');
+		}
 	};
 	Space.prototype.disassociateCell = function(cell) {
 		cell.currentSpace = null;
@@ -88,7 +81,7 @@ function Grid(game, width, height, containerSelector) {
 		return this.cells;
 	};
 	Space.prototype.hasSpace = function() {
-		if (this.cells.length < GRID_CLUSTER_SPACE) {
+		if (this.cells.length < this.game.Constants.GRID_CLUSTER_SIZE) {
 			return true;
 		} else {
 			return false;
@@ -96,7 +89,12 @@ function Grid(game, width, height, containerSelector) {
 	};
 
 	this.getSpace = function(x, y) {
-		return this.spaces[y][x];
+		if (this.spaces[x]) {
+			if (this.spaces[y]) {
+				return this.spaces[x][y]
+			}
+		}
+		// implicit return of undefined if we can't find anything 
 	};
 
 	// Generate spaces

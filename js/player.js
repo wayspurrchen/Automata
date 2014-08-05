@@ -17,9 +17,10 @@ function Player(game) {
 	this.color = randomColor;
 	this.cells = [];
 
-	this.createCell = function(x, y) {
+	this.createCell = function(x, y, moved) {
 		var cell = new Cell(this.game, x, y);
-		cell.activate(this);
+		// Determine whether cell can make a move at instantiation time
+		cell.activate(this, x, y, moved);
 		this.associateCell(cell);
 	};
 	this.associateCell = function(cell) {
