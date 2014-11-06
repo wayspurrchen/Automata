@@ -230,7 +230,7 @@ function makeCells() {
 	cells[0][GRID_HEIGHT - 1].setOwner(2);
 	cells[GRID_WIDTH - 1][GRID_HEIGHT - 1].setOwner(3);
 	cells[GRID_WIDTH - 1][0].setOwner(4);
-	cells[GRID_WIDTH / 2 - 1][GRID_HEIGHT / 2 - 1].setOwner(5);
+	// cells[GRID_WIDTH / 2 - 1][GRID_HEIGHT / 2 - 1].setOwner(5);
 }
 
 setup();
