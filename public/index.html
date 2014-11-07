@@ -1,20 +1,39 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
-	<script src="js/kinetic-v5.1.0.min.js"></script>
-	<script src="js/lodash.min.js"></script>
+	<title>Automata</title>
+	<link rel="stylesheet" href="/css/normalize.css">
+	<link rel="stylesheet" href="/css/foundation.min.css">
+	<link rel="stylesheet" href="/css/style.css">
+	<link rel='stylesheet' href='/css/colpick.css' />
+	<script src="/js/vendor/jquery.min.js"></script>
+	<script src="/js/vendor/colpick.js"></script>
 </head>
 <body>
-	<h2>Automata</h2>
-	<p>Cell behaviors:</p>
-	<ul>
-		<li>Cells either move to or divide into the nearest (empty) space</li>
-		<li>Cells will "fight" with nearby individual enemy cells</li>
-		<li>Cells surrounded by three or more of the same opponent are consumed</li>
-	</ul>
-	<div id="mutation-points"></div>
-	<div id="container"></div>
-	<script src="js/script.js"></script>
+	<main class="row">
+		<div class="large-12 columns">
+			<h1>automata</h1>
+			<p>Cell behaviors:</p>
+			<ul>
+				<li>Cells either move to or divide into the nearest (empty) space</li>
+				<li>Cells will "fight" with nearby individual enemy cells</li>
+				<li>Cells surrounded by three or more of the same opponent are consumed</li>
+			</ul>
+			<div id="mutation-points"></div>
+			<div id="container"></div>
+			<div id="owners"></div>
+			8 color pickers down here
+		</div>
+	</main>
+	<script src="/js/vendor/kinetic-v5.1.0.min.js"></script>
+	<script src="/js/vendor/lodash.min.js"></script>
+	<script src="/js/vendor/html5shiv.min.js"></script>
+	<script src="/js/lib/cell/cell.js"></script>
+	<script src="/js/lib/cell/cellView.js"></script>
+	<script src="/js/lib/cell/cellController.js"></script>
+	<script src="/js/lib/constants.js"></script>
+	<script src="/js/lib/game.js"></script>
+	<script src="/js/lib/grid.js"></script>
+	<script src="/js/main.js"></script>
 </body>
 </html>

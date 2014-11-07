@@ -1,63 +1,17 @@
-var GRID_WIDTH  = 60;
-var GRID_HEIGHT = 60;
-var GRID_CELL_SIZE = 5;
-
-var stage = new Kinetic.Stage({
-	container: 'container',
-	width: GRID_WIDTH * GRID_CELL_SIZE,
-	height: GRID_HEIGHT * GRID_CELL_SIZE
-});
-
-var layer = new Kinetic.Layer();
-stage.add(layer);
-
-var cells = [];
-var owners = {
-	0: 'white',
-	1: 'red',
-	2: 'blue',
-	3: 'purple',
-	4: 'orange',
-	5: 'green',
-	6: 'turquoise',
-	7: 'black'
-};
-
-var mutationPoints = {};
-for (var i in owners) {
-	mutationPoints[i] = 0;
-}
-
-function randomInt(max, min) {
-	if (typeof min === 'undefined') min = 0;
-	return Math.floor(Math.random() * (max - min)) + min;
-}
-
-function CellView(x, y, fill) {
-	this.rect = new Kinetic.Rect({
-		width: GRID_CELL_SIZE,
-		height: GRID_CELL_SIZE,
-		x: x * GRID_CELL_SIZE,
-		y: y * GRID_CELL_SIZE,
-		fill: fill,
-		opacity: 0.7
-	});
-	layer.add(this.rect);
-}
-CellView.prototype.move = function(x, y) {	
-	this.rect.setAttr('x', x * GRID_CELL_SIZE);
-	this.rect.setAttr('y', y * GRID_CELL_SIZE);
-};
-CellView.prototype.setOwner = function(color) {
-	this.rect.setAttr('fill', color)
-};
-
 function Cell(x, y, owner) {
-	this.view = new CellView(x, y, owners[owner]);
-	this.x = x;
-	this.y = y;
-	this.owner = owner;
-	cells[x][y] = this;
+	this.game   = game;
+	this.x      = x;
+	this.y      = y;
+	this.view   = new CellView(game, this);
+	this.draw = function() {
+		this.view.draw();
+	};
+	this.show = function() {
+		this.view.show();
+	};
+	this.hide = function() {
+		this.view.hide();
+	};
 }
 Cell.prototype.movedCells = [];
 Cell.prototype.move = function(cell) {
@@ -214,92 +168,3 @@ Cell.prototype.checkFight = function(surroundingCells) {
 	}
 	return fight;
 };
-
-function setup() {
-	makeCells();
-}
-
-function makeCells() {
-	for (var i = 0; i < GRID_WIDTH; i++) {
-		cells[i] = [];
-		for (var j = 0; j < GRID_HEIGHT; j++) {
-			cells[i][j] = new Cell(i, j, 0);
-		}
-	}
-	cells[0][0].setOwner(1);
-	cells[0][GRID_HEIGHT - 1].setOwner(2);
-	cells[GRID_WIDTH - 1][GRID_HEIGHT - 1].setOwner(3);
-	cells[GRID_WIDTH - 1][0].setOwner(4);
-	// cells[GRID_WIDTH / 2 - 1][GRID_HEIGHT / 2 - 1].setOwner(5);
-}
-
-setup();
-
-function iterateCells(callback) {
-	for (var i = 0; i < GRID_WIDTH; i++) {
-		for (var j = 0; j < GRID_HEIGHT; j++) {
-			callback(cells[i][j]);
-		}
-	}
-}
-
-function iterateRandomCells(callback) {
-	var randomCells = [];
-	iterateCells(function(cell) {
-		randomCells.push(cell);
-	});
-	randomCells = _.shuffle(randomCells);
-	var length = randomCells.length;
-	for (var i = 0; i < length; i++) {
-		callback(randomCells[i]);
-	}
-}
-
-var turnCounter = 0;
-
-function turn() {
-	turnCounter++;
-	// console.log('Taking turn!');
-	var ownerRecord = {};
-
-	iterateRandomCells(function(cell) {
-		cell.takeTurn();
-	});
-
-	// Clear moved status from movedCells--we have to do this because
-	// new cells created to the left of the cell's turn being executed
-	// will be incorrectly moved on the next set of turns
-	var movedLength = Cell.prototype.movedCells.length;
-	for (var i = 0; i < movedLength && movedLength > 0; i++) {
-		var movedCell = Cell.prototype.movedCells.pop();
-		movedCell.movedThisTurn = false;
-	}
-
-	// Check ownerships after completion
-	iterateCells(function(cell) {
-		if (cell.owner != 0) {
-			if (ownerRecord[cell.owner]) {
-				ownerRecord[cell.owner].push(cell);
-			} else {
-				ownerRecord[cell.owner] = [];
-				ownerRecord[cell.owner].push(cell);
-			}
-		}
-	});
-
-	$('#mutation-points').empty()
-	for (var i in mutationPoints) {
-		mutationPoints[i]++;
-		$('#mutation-points').append(i + ': ' + mutationPoints[i] + '; ');
-	}
-
-	// Update hit graph every 10 frames
-	if (turnCounter % 10 == 0) {
-		layer.draw();
-	} else {
-		layer.drawScene();
-	}
-	setTimeout(turn, 10);
-}
-
-turn();
