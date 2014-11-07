@@ -1,8 +1,48 @@
 main {
 	text-align: center;
 }
-.owner-picker {
+.brood-picker {
+}
+.brood-square {
 	display: inline-block;
-	width: 50px;
+	width: 30px;
+	height: 30px;
+	margin: 2px;
+	padding: 1px;
+	vertical-align: top;
+}
+.brood-square.highlight {
+	border: 2px solid black;
+}
+.brood-boxes {
+	float: left;
+	width: 60px;
+}
+#automata-canvas {
+	float: left;
+	margin-right: 60px;
+}
+.canvas-container {
+	display: inline-block;
+	-moz-user-select: none;
+	-webkit-user-select: none;
+	-ms-user-select: none;
+}
+.automata {
+	text-align: center;
+}
+
+.controls {
 	height: 50px;
+}
+.controls .speed-input {
+	height: 100%;
+}
+.controls button {
+	height: 100%;
+	padding: inherit 20px;
+}
+
+.canvas-container {
+	margin-top: 20px;
 }

@@ -1,12 +1,15 @@
 // In charge of rendering the canvas.
 function GameArtist(game) {
 	this.game = game;
-	this.canvas = canvas;
+	// Create and append canvas
+	this.canvas = this.game.$view.find('#automata-canvas')[0];
 	this.canvas.width  =
-		this.Constants.GRID_WIDTH * this.Constants.GRID_CELL_SIZE;
+		this.game.Constants.GRID_WIDTH * this.game.Constants.GRID_CELL_SIZE;
 	this.canvas.height =
-		this.Constants.GRID_HEIGHT * this.Constants.GRID_CELL_SIZE;
-	this.canvasBuffer = document.createElement('canvas');
+		this.game.Constants.GRID_HEIGHT * this.game.Constants.GRID_CELL_SIZE;
+	
+	// Create secondary, off-screen buffer
+	this.canvasBuffer = $('<canvas>')[0];
 	this.canvasBuffer.width  = this.canvas.width;
 	this.canvasBuffer.height = this.canvas.height;
 	this.bufferContext = this.canvas.getContext('2d');
@@ -21,6 +24,7 @@ function GameArtist(game) {
 		_.each(cells, function(cell) {
 			cell.draw();
 		});
+
 		// Draw out from the buffer
 		this.context.drawImage(this.canvasBuffer, 0, 0);
 	};

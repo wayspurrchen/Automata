@@ -13,16 +13,41 @@
 	<main class="row">
 		<div class="large-12 columns">
 			<h1>automata</h1>
+			<h5>Conway's Game of Life, but with violence</h5>
+			<div id="container"></div>
 			<p>Cell behaviors:</p>
 			<ul>
 				<li>Cells either move to or divide into the nearest (empty) space</li>
 				<li>Cells will "fight" with nearby individual enemy cells</li>
 				<li>Cells surrounded by three or more of the same opponent are consumed</li>
 			</ul>
-			<div id="mutation-points"></div>
-			<div id="container"></div>
-			<div id="owners"></div>
-			8 color pickers down here
+			<script type="text/template" id="automata-template">
+				<div class="automata">
+					<div class="controls">
+						<button id="play">
+							play
+						</button>
+						<button id="pause">
+							pause
+						</button>
+						<input type="text" class="speed-input" id="speed-input">
+						<button id="submit-speed">set speed (ms)</button>
+					</div>
+					<div class="canvas-container">
+						<div class="brood-boxes">
+							<span id="brood-picker" class="brood-square highlight"></span>
+							<span class="brood-counters"></span>
+						</div>
+						<canvas id="automata-canvas"></canvas>
+					</div>
+				</div>
+			</script>
+			<script type="text/template" id="broods-template">
+				</span>
+				<% for (var i = 0; i < broods.length; i++) { %>
+				<span class="brood-square" style="color: <%= broods[i].text %>; background-color: <%= broods[i].brood %>"><%= broods[i].count %></span>
+				<% } %>
+			</script>
 		</div>
 	</main>
 	<script src="/js/vendor/lodash.min.js"></script>
@@ -34,7 +59,10 @@
 	<script src="/js/lib/game/game.js"></script>
 	<script src="/js/lib/game/gameController.js"></script>
 	<script src="/js/lib/game/gameArtist.js"></script>
+	<script src="/js/lib/game/gameUI.js"></script>
 	<script src="/js/lib/grid.js"></script>
+	<script src="/js/lib/util.js"></script>
+	<script src="/js/lib/brood.js"></script>
 	<script src="/js/main.js"></script>
 </body>
 </html>

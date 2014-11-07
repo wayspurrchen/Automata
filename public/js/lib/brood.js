@@ -9,13 +9,11 @@ function Brood(game, color) {
 	};
 	// Cells must have their broods set properly again after this
 	this.disownCell = function(cell) {
-		console.log('length preremoval:', this.cells.length);
+		// console.log('length preremoval:', this.cells.length);
 		_.pull(this.cells, cell);
-		console.log('length postremoval:', this.cells.length);
+		// console.log('length postremoval:', this.cells.length);
 	};
-	Brood.allBroods.push(this);
+	this.game.broods.push(this);
 
 	console.log('Brood created with ' + this.color + '!');
 }
-Brood.allBroods = [];
-Brood.existingColors = {};

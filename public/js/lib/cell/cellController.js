@@ -13,28 +13,29 @@ function CellController(game) {
 	// Returns an object containing the broods as keys
 	// and the number of cells they have as colors
 	this.getCellDistribution = function() {
-		var cellDistribution = {};
-		for (var i = 0; i < this.game.broods; i++) {
-			cellDistribution[this.game.broods[i].color] = this.game.broods[i];
+		var cellDistributions = [];
+		for (var i = 0; i < this.game.broods.length; i++) {
+			var obj = {};
+			cellDistributions.push({
+				brood: this.game.broods[i].color,
+				count: this.game.broods[i].cells.length
+			});
 		}
-		return cellDistribution;
+		return cellDistributions;
 	};
 	// Execute a turn, iterating through each individual cell.
 	this.turn = function() {
 		// Reset turns on cells anew
 		var allCells = this.getAllCells();
-		for (var i = 0; i < allCells; i++) {
+		for (var i = 0; i < allCells.length; i++) {
 			allCells[i].moved = false;
 		}
+
 		// Shuffle up cells so we don't run into bottom-right power
 		// due to iteration order
-		var randomCells = _.shuffle(allCells);
-		// Iterate through array backwards so we can pop stuff off,
-		// better performance than shift
-		for (var i = randomCells.length; i > 0; i--) {
-			var cell = randomCells[i].pop();
-			// Take a turn - if the cell hasn't moved
-			if (!cell.moved) this.cellTurn(cell);
+		while (allCells.length > 0) {
+			var cell = allCells.splice(randomInt(allCells.length), 1)[0];
+			this.cellTurn(cell);
 		}
 	};
 	// Take a turn for the cell. Check if we've been conquered, if we
@@ -44,23 +45,24 @@ function CellController(game) {
 		var surroundings = cell.getSurroundingCells();
 
 		// Check for conquer scenario
-		var conquered = this.cellConquered(randomCells, surroundings);
+		var conquered = this.cellConquered(cell, surroundings);
 		if (conquered.result) {
-			cell.setBrood(conquered.conqueror);
+			var brood = this.game.controller.getBrood(conquered.conquerorColor);
+			cell.setBrood(brood);
 			cell.moved = true;
 			return;
 		}
 
 		// Act on fight scenario
-		var fight = this.cellFight(surroundings);
+		var fight = this.cellFight(cell, surroundings);
 		if (fight.result) {
-			if (fight.winner == cell.brood) {
+			if (fight.winner == cell) {
 				fight.loser.setBrood(cell.brood);
-				fight.loser.moved = true;
 			} else {
-				cell.setOwner(fight.winner.brood);
-				fight.winner.moved = true;
+				cell.setBrood(fight.winner.brood);
 			}
+			fight.loser.moved = true;
+			fight.winner.moved = true;
 			return;
 		}
 
@@ -74,9 +76,11 @@ function CellController(game) {
 				// move is up
 				this.createCell(cell.brood, randomUnoccupied, true);
 			} else {
-				this.moveCell(randomUnoccupied);
+				this.moveCell(cell, randomUnoccupied);
 			}
 		}
+
+		cell.moved = true;
 	};
 	// Checks whether or not a cell is conquered by its neighbours
 	// by getting the surrounding cells and accumulating the count
@@ -88,55 +92,65 @@ function CellController(game) {
 		for (var i in surroundings.broods) {
 			if (surroundings.broods[i] >= 3) {
 				conquered.result = true;
-				conquered.conqueror = i;
+				conquered.conquerorColor = i;
 			}
 		}
 		return conquered;
 	};
-	this.cellFight = function(surroundings) {
+	this.cellFight = function(cell, surroundings) {
 		var fight = {
 			result: false
 		};
 
-		// Get all the viable opponents for a fight
-		var opponentIds = [];
-		for (var j in surroundings.broods) {
-			var opponentCount = surroundings.broods[j];
-			if (opponentCount >= 1) {
-				opponentIds.push(j);
-			}
-		}
-		if (opponentIds.length == 0) return fight;
-
-		// Pick a random adjacent opponent
-		var opponentsCountLength = opponentIds.length;
-		if (opponentsCountLength > 0) {
-			for (var k = 0; k < opponentsCountLength; k++) {
-				// We can safely set the result to be true--we wouldn't
-				// get here if there weren't a surrounding cell of the owner
-				fight.result = true;
-				// Pick a random opponent
-				var opponentId = opponentIds[randomInt(opponentsCountLength)];
-			}
-		}
-
-		// Grab random cell from the chosen owner
+		// Grab all the nearby enemy cells
 		var opponentCells = [];
-		for (var i in surroundings.cells) {
-			if (surroundings.cells[i].owner == opponentId) {
-				opponentCells.push(surroundings.cells[i]);
+		for (var j in surroundings.cells) {
+			if (surroundings.cells[j].brood !== cell.brood) {
+				opponentCells.push(surroundings.cells[j]);
 			}
 		}
-		var opponentCell = opponentCells[randomInt(opponentCells.length)];
+
+		// Grab one random enemy cell
+		var opponentCell;
+		if (opponentCells.length > 0) {
+			// Yup, this is a fight!
+			fight.result = true;
+			var rand = randomInt(opponentCells.length);
+			opponentCell = opponentCells[rand];
+		}
+
+		// // Pick a random adjacent opponent
+		// var opponentsCountLength = opponentColors.length;
+		// if (opponentsCountLength > 0) {
+		// 	debugger;
+		// 	for (var k = 0; k < opponentsCountLength; k++) {
+		// 		// We can safely set the result to be true--we wouldn't
+		// 		// get here if there weren't a surrounding cell of the brood
+		// 		fight.result = true;
+		// 		// Pick a random opponent
+		// 		var ran = randomInt(opponentsCountLength);
+		// 		var opponentColor = opponentColors[randomInt(opponentsCountLength)];
+		// 		console.log(ran + ' out of ' + opponentColors.length);
+		// 	}
+		// }
+
+		// // Grab random cell from the chosen brood
+		// var opponentCells = [];
+		// for (var i in surroundings.cells) {
+		// 	if (surroundings.cells[i].brood.color == opponentColor) {
+		// 		opponentCells.push(surroundings.cells[i]);
+		// 	}
+		// }
+		// var opponentCell = opponentCells[randomInt(opponentCells.length)];
 
 		// Coin flip to win
 		var thisCellWins = randomInt(2) == 0;
 		if (thisCellWins) {
-			fight.winner = this;
+			fight.winner = cell;
 			fight.loser  = opponentCell;
 		} else {
 			fight.winner = opponentCell;
-			fight.loser  = this;
+			fight.loser  = cell;
 		}
 		return fight;
 	};

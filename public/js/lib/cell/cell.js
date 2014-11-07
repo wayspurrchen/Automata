@@ -7,7 +7,11 @@ function Cell(game, brood, space, moved) {
 	this.space = space;
 	// Indicates that this cell has not already moved,
 	// divided, conquered, etc. this turn
-	this.moved = moved || false;
+	if (typeof moved === 'undefined') {
+		this.moved = false;
+	} else {
+		this.moved = true;
+	}
 	this.view = new CellView(game, this);
 }
 Cell.prototype.draw = function() {
@@ -25,7 +29,9 @@ Cell.prototype.setSpace = function(space) {
 };
 // Set parent brood. TODO: unset from other brood parents!!
 Cell.prototype.setBrood = function(brood) {
+	this.brood.disownCell(this);
 	this.brood = brood;
+	this.brood.ownCell(this);
 	this.view.setColor(this.brood.color);
 };
 // Returns the cells surrounding this cell,
@@ -54,131 +60,43 @@ Cell.prototype.getSurroundingCells = function() {
 		surroundingCells.cells.top = topSpace.cell;
 	}
 
+	// Strip out empty surroundings
+	for (var i in surroundingCells.cells) {
+		if (!surroundingCells.cells[i]) delete surroundingCells.cells[i];
+	}
+
 	// Accumulate count of cell broods in broods property
 	for (var i in surroundingCells.cells) {
 		// Don't count own broods in owners
-		if (surroundingCells.cells[i].brood ==  his.brood) continue;
-		if (surroundingCells.broods[surroundingCells.cells[i].brood]) {
-			surroundingCells.broods[surroundingCells.cells[i].brood]++;
+		if (surroundingCells.cells[i].brood == this.brood) continue;
+		if (surroundingCells.broods[surroundingCells.cells[i].brood.color]) {
+			surroundingCells.broods[surroundingCells.cells[i].brood.color]++;
 		} else {
-			surroundingCells.broods[surroundingCells.cells[i].brood] = 1;
+			surroundingCells.broods[surroundingCells.cells[i].brood.color] = 1;
 		}
 	}
 	return surroundingCells;
 };
-Cell.prototype.takeTurn = function() {
-	if (this.owner == 0) return;
-	if (this.movedThisTurn) {
-		this.movedThisTurn = false;
-		return;
-	}
-
-	var surroundingCells = this.getSurroundingCells();
-
-	var conquered = this.checkConquered(surroundingCells);
-	if (conquered.result) {
-		this.setOwner(conquered.conqueror);
-		return;
-	}
-
-	var fight = this.checkFight(surroundingCells);
-	if (fight.result) {
-		if (fight.winner == this) {
-			fight.loser.setOwner(this.owner);
-			fight.loser.movedThisTurn = true;
-		} else {
-			this.setOwner(fight.winner.owner);
-			fight.winner.movedThisTurn = true;
-		}
-		return;
-	}
-
-	var randomUnoccupied = this.getRandomUnoccupiedNeighbor();
-	if (randomUnoccupied) {
-		// Coin toss to move or reproduce into empty space
-		if (randomInt(2) == 0) {
-			this.divide(randomUnoccupied);
-		} else {
-			this.move(randomUnoccupied);
-		}
-	}
-};
 // Gets a random, unoccupied neighbor space
 Cell.prototype.getRandomUnoccupiedNeighbor = function() {
 	var surroundingSpaces = this.space.getNeighborhood();
+	delete surroundingSpaces.center;
+	delete surroundingSpaces.topLeft;
+	delete surroundingSpaces.topRight;
+	delete surroundingSpaces.bottomLeft;
+	delete surroundingSpaces.bottomRight;
 
 	var unoccupiedSpaces = [];
 	for (var i in surroundingSpaces) {
-		if (!surroundingSpaces.cell) {
-			unoccupiedCells.push(surroundingCells[i]);
+		// If we found a space (case for edges of grid) and it
+		// doesn't have a cell, we know it's an unoccupied space
+		if (surroundingSpaces[i] && !surroundingSpaces[i].cell) {
+			unoccupiedSpaces.push(surroundingSpaces[i]);
 		}
 	}
-	if (unoccupiedCells.length > 0) {
-		return unoccupiedCells[randomInt(unoccupiedCells.length)];
+	if (unoccupiedSpaces.length > 0) {
+		var rand = unoccupiedSpaces[randomInt(unoccupiedSpaces.length)];
+		return rand;
 	}
 	// implicit undefined return
-};
-// Divide into a given cell
-Cell.prototype.divide = function(cell) {
-	cell.setOwner(this.owner);
-};
-// Check whether or not this cell gets eaten by surrounding cells
-Cell.prototype.checkConquered = function(surroundingCells) {
-	var conquered = {
-		result: false
-	};
-
-	for (var i in surroundingCells.owners) {
-		if (surroundingCells.owners[i] >= 3) {
-			conquered.result = true;
-			conquered.conqueror = i;
-		}
-	}
-	return conquered;
-};
-Cell.prototype.checkFight = function(surroundingCells) {
-	var fight = {
-		result: false
-	};
-
-	// Get all the viable opponents for a fight
-	var opponentIds = [];
-	for (var j in surroundingCells.owners) {
-		var opponentCount = surroundingCells.owners[j];
-		if (opponentCount >= 1) {
-			opponentIds.push(j);
-		}
-	}
-	if (opponentIds.length == 0) return fight;
-
-	// Pick a random adjacent opponent
-	var opponentsCountLength = opponentIds.length;
-	if (opponentsCountLength > 0) {
-		for (var k = 0; k < opponentsCountLength; k++) {
-			// We can safely set the result to be true--we wouldn't
-			// get here if there weren't a surrounding cell of the owner
-			fight.result = true;
-			// Pick a random opponent
-			var opponentId = opponentIds[randomInt(opponentsCountLength)];
-		}
-	}
-
-	// Grab random cell from the chosen owner
-	var opponentCells = [];
-	for (var i in surroundingCells.cells) {
-		if (surroundingCells.cells[i].owner == opponentId) {
-			opponentCells.push(surroundingCells.cells[i]);
-		}
-	}
-	var opponentCell = opponentCells[randomInt(opponentCells.length)];
-
-	var thisCellWins = randomInt(2) == 0;
-	if (thisCellWins) {
-		fight.winner = this;
-		fight.loser  = opponentCell;
-	} else {
-		fight.winner = opponentCell;
-		fight.loser  = this;
-	}
-	return fight;
 };
