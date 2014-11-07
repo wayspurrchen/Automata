@@ -19,7 +19,7 @@ function Grid(game, width, height, containerSelector) {
 		this.grid = grid;
 		this.x = x;
 		this.y = y;
-		this.cells = [];
+		this.cell = null;
 	}
 	Space.prototype.getTopSpace = function() {
 		return this.grid.getSpace(this.x, this.y - 1);
@@ -59,26 +59,10 @@ function Grid(game, width, height, containerSelector) {
 		};
 	};
 	Space.prototype.associateCell = function(cell) {
-		if (this.cells.length < this.grid.game.Constants.GRID_CLUSTER_SIZE) {
-			cell.currentSpace = this;
-			this.cells.push(cell);
-		} else {
-			throw new Error('shouldn\'t be trying to do this!!');
-		}
+		this.cell = cell;
 	};
 	Space.prototype.disassociateCell = function(cell) {
-		cell.currentSpace = null;
-		for (var i in this.cells) {
-			if (cell === this.cells[i]) {
-				this.cells.splice(i, 1);
-			}
-		}
-	};
-	Space.prototype.getCellCount = function() {
-		return this.cells.length;
-	};
-	Space.prototype.getCells = function() {
-		return this.cells;
+		this.cell = null;
 	};
 
 	this.getSpace = function(x, y) {

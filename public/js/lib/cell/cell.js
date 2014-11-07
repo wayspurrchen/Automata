@@ -1,55 +1,74 @@
-function Cell(x, y, owner) {
-	this.game   = game;
-	this.x      = x;
-	this.y      = y;
-	this.view   = new CellView(game, this);
-	this.draw = function() {
-		this.view.draw();
-	};
-	this.show = function() {
-		this.view.show();
-	};
-	this.hide = function() {
-		this.view.hide();
-	};
+// Cell objects are ignorant of their x and y position--
+// they merely access surrounding spaces, which can also
+// have entities.
+function Cell(game, brood, space, moved) {
+	this.brood = brood;
+	this.game  = game;
+	this.space = space;
+	// Indicates that this cell has not already moved,
+	// divided, conquered, etc. this turn
+	this.moved = moved || false;
+	this.view = new CellView(game, this);
 }
-Cell.prototype.movedCells = [];
-Cell.prototype.move = function(cell) {
-	cell.setOwner(this.owner);
-	this.setOwner(0);
+Cell.prototype.draw = function() {
+	this.view.draw();
 };
-Cell.prototype.setOwner = function(owner) {
-	this.movedThisTurn = true;
-	this.movedCells.push(this);
-	this.owner = owner;
-	this.view.setOwner(owners[owner]);
+Cell.prototype.show = function() {
+	this.view.show();
 };
+Cell.prototype.hide = function() {
+	this.view.hide();	
+};
+// Set or get space
+Cell.prototype.space = function(x, y) {
+	if (x && y) {
+		this.position = {
+			x: x,
+			y: y
+		};
+	} else {
+		return this.position;
+	}
+};
+// Set parent brood. TODO: unset from other brood parents!!
+Cell.prototype.setBrood = function(brood) {
+	this.brood = brood;
+	this.view.setColor(this.brood.color);
+};
+// Returns the cells surrounding this cell,
+// as well as a count of the number of broods
+// in the area
 Cell.prototype.getSurroundingCells = function() {
 	var surroundingCells = {
 		cells: {},
-		owners: {}
+		broods: {}
 	};
-	if (this.x + 1 < GRID_WIDTH) {
-		surroundingCells.cells.right = cells[this.x + 1][this.y];
+	var rightSpace = this.space.getRightSpace();
+	var leftSpace = this.space.getLeftSpace();
+	var bottomSpace = this.space.getBottomSpace();
+	var topSpace = this.space.getTopSpace();
+
+	if (rightSpace) {
+		surroundingCells.cells.right = rightSpace.cell;
 	}
-	if (this.x - 1 >= 0) {
-		surroundingCells.cells.left = cells[this.x - 1][this.y];
+	if (leftSpace) {
+		surroundingCells.cells.left = leftSpace.cell;
 	}
-	if (this.y + 1 < GRID_HEIGHT) {
-		surroundingCells.cells.bottom = cells[this.x][this.y + 1];
+	if (bottomSpace) {
+		surroundingCells.cells.bottom = bottomSpace.ell;
 	}
-	if (this.y - 1 >= 0) {
-		surroundingCells.cells.top = cells[this.x][this.y - 1];
+	if (topSpace) {
+		surroundingCells.cells.top = topSpace.cell;
 	}
 
-	// Accumulate count of cell owners in owners property
+	// Accumulate count of cell broods in broods property
 	for (var i in surroundingCells.cells) {
-		if (surroundingCells.cells[i].owner == 0 ||
-			surroundingCells.cells[i].owner == this.owner) continue;
-		if (surroundingCells.owners[surroundingCells.cells[i].owner]) {
-			surroundingCells.owners[surroundingCells.cells[i].owner]++;
+		if (surroundingCells.cells[i].brood == 0 ||
+			surroundingCells.cells[i].brood == this.brood) continue;
+		if (surroundingCells.owners[surroundingCells.cells[i].brood]) {
+			surroundingCells.owners[surroundingCells.cells[i].brood]++;
 		} else {
-			surroundingCells.owners[surroundingCells.cells[i].owner] = 1;
+			surroundingCells.owners[surroundingCells.cells[i].brood] = 1;
 		}
 	}
 	return surroundingCells;
@@ -96,7 +115,7 @@ Cell.prototype.getRandomUnoccupiedNeighbor = function() {
 
 	var unoccupiedCells = [];
 	for (var i in surroundingCells.cells) {
-		if (surroundingCells.cells[i].owner == 0) {
+		if (surroundingCells.cells[i].brood == 0) {
 			unoccupiedCells.push(surroundingCells.cells[i]);
 		}
 	}
