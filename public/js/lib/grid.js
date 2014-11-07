@@ -5,15 +5,6 @@ function Grid(game, width, height, containerSelector) {
 	this.width  = width;
 	this.height = height;
 
-	this.addCell = function(x, y, cell) {
-		var space = this.getSpace(x, y);
-		space.associateCell(cell);
-	};
-	this.detachCell = function(x, y, cell) {
-		var space = this.getSpace(x, y);
-		space.disassociateCell(cell);
-	};
-
 	// A space in the grid
 	function Space(grid, x, y) {
 		this.grid = grid;
@@ -58,11 +49,9 @@ function Grid(game, width, height, containerSelector) {
 			bottomLeft: this.getBottomLeftSpace()
 		};
 	};
-	Space.prototype.associateCell = function(cell) {
+	// and in the darkness, bind them
+	Space.prototype.setCell = function(cell) {
 		this.cell = cell;
-	};
-	Space.prototype.disassociateCell = function(cell) {
-		this.cell = null;
 	};
 
 	this.getSpace = function(x, y) {
@@ -72,6 +61,17 @@ function Grid(game, width, height, containerSelector) {
 			}
 		}
 		// implicit return of undefined if we can't find anything 
+	};
+	// Return a flattened array of all spaces (for drawing usually)
+	this.getSpacesFlat = function() {
+		var flat = [];
+		// Generate spaces
+		for (var i = 0; i < this.width; i++) {
+			for (var j = 0; j < this.height; j++) {
+				flat.push(this.spaces[i][j]);
+			}
+		}
+		return flat;
 	};
 
 	// Generate spaces

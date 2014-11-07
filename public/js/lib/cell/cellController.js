@@ -1,22 +1,34 @@
+// High-level cell controller in charge of manipulating,
+// moving, creating, destroying/etc. cells.
 function CellController(game) {
+	this.game = game;
 	// Get all cells currently at play in the game
-	function getAllCells() {
+	this.getAllCells = function() {
 		var allCells = [];
-		for (var i = 0; i < game.broods.length; i++) {
-			allCells = allCells.concat(game.broods[i].cells);
+		for (var i = 0; i < this.game.broods.length; i++) {
+			allCells = allCells.concat(this.game.broods[i].cells);
 		}
 		return allCells;
 	}
+	// Returns an object containing the broods as keys
+	// and the number of cells they have as colors
+	this.getCellDistribution = function() {
+		var cellDistribution = {};
+		for (var i = 0; i < this.game.broods; i++) {
+			cellDistribution[this.game.broods[i].color] = this.game.broods[i];
+		}
+		return cellDistribution;
+	};
 	// Execute a turn, iterating through each individual cell.
 	this.turn = function() {
 		// Reset turns on cells anew
-		var allCells = getAllCells();
+		var allCells = this.getAllCells();
 		for (var i = 0; i < allCells; i++) {
 			allCells[i].moved = false;
 		}
 		// Shuffle up cells so we don't run into bottom-right power
 		// due to iteration order
-		var randomCells = _.shuffle(getAllCells());
+		var randomCells = _.shuffle(allCells);
 		// Iterate through array backwards so we can pop stuff off,
 		// better performance than shift
 		for (var i = randomCells.length; i > 0; i--) {
@@ -57,9 +69,12 @@ function CellController(game) {
 		if (randomUnoccupied) {
 			// Coin toss to move or reproduce into empty space
 			if (randomInt(2) == 0) {
-				this.divide(randomUnoccupied);
+				// Create a cell with our brood in the random
+				// unoccupied space and also specify that its
+				// move is up
+				this.createCell(cell.brood, randomUnoccupied, true);
 			} else {
-				this.move(randomUnoccupied);
+				this.moveCell(randomUnoccupied);
 			}
 		}
 	};
@@ -70,7 +85,6 @@ function CellController(game) {
 		var conquered = {
 			result: false
 		};
-
 		for (var i in surroundings.broods) {
 			if (surroundings.broods[i] >= 3) {
 				conquered.result = true;
@@ -126,13 +140,23 @@ function CellController(game) {
 		}
 		return fight;
 	};
-	this.moveCell = function(cell, x, y) {
-		cell.position(x, y);
+	this.moveCell = function(cell, space) {
+		// Detach from current space
+		cell.space.setCell(null);
+		// and in the darkness, bind them
+		space.setCell(cell);
+		cell.setSpace(space);
+		cell.moved = true;
 	};
-	this.divideCell = function(cell) {
-		
-	};
-	this.setBrood = function(cell, brood) {
-
+	// Tell a Brood to create a cell
+	this.createCell = function(brood, space, moved) {
+		var cell = new Cell(
+			this.game,
+			brood,
+			space,
+			moved
+		);
+		brood.ownCell(cell);
+		space.setCell(cell);
 	};
 }

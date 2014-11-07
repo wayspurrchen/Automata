@@ -4,17 +4,18 @@ function Brood(game, color) {
 	this.cells = [];
 
 	this.ownCell = function(cell) {
-		// Set brood properly on cell
-		cell.setBrood(this);
 		// Add to our cells
 		this.cells.push(cell);
 	};
-	// very not-performant - optimize later.
-	// possibly into transferOwnership property
-	// on Brood constructor function?
+	// Cells must have their broods set properly again after this
 	this.disownCell = function(cell) {
-		// this.
+		console.log('length preremoval:', this.cells.length);
+		_.pull(this.cells, cell);
+		console.log('length postremoval:', this.cells.length);
 	};
+	Brood.allBroods.push(this);
 
 	console.log('Brood created with ' + this.color + '!');
 }
+Brood.allBroods = [];
+Brood.existingColors = {};

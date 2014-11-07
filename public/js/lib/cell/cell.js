@@ -19,16 +19,9 @@ Cell.prototype.show = function() {
 Cell.prototype.hide = function() {
 	this.view.hide();	
 };
-// Set or get space
-Cell.prototype.space = function(x, y) {
-	if (x && y) {
-		this.position = {
-			x: x,
-			y: y
-		};
-	} else {
-		return this.position;
-	}
+// Set space
+Cell.prototype.setSpace = function(space) {
+	this.space = space;
 };
 // Set parent brood. TODO: unset from other brood parents!!
 Cell.prototype.setBrood = function(brood) {
@@ -63,12 +56,12 @@ Cell.prototype.getSurroundingCells = function() {
 
 	// Accumulate count of cell broods in broods property
 	for (var i in surroundingCells.cells) {
-		if (surroundingCells.cells[i].brood == 0 ||
-			surroundingCells.cells[i].brood == this.brood) continue;
-		if (surroundingCells.owners[surroundingCells.cells[i].brood]) {
-			surroundingCells.owners[surroundingCells.cells[i].brood]++;
+		// Don't count own broods in owners
+		if (surroundingCells.cells[i].brood ==  his.brood) continue;
+		if (surroundingCells.broods[surroundingCells.cells[i].brood]) {
+			surroundingCells.broods[surroundingCells.cells[i].brood]++;
 		} else {
-			surroundingCells.owners[surroundingCells.cells[i].brood] = 1;
+			surroundingCells.broods[surroundingCells.cells[i].brood] = 1;
 		}
 	}
 	return surroundingCells;
@@ -110,18 +103,20 @@ Cell.prototype.takeTurn = function() {
 		}
 	}
 };
+// Gets a random, unoccupied neighbor space
 Cell.prototype.getRandomUnoccupiedNeighbor = function() {
-	var surroundingCells = this.getSurroundingCells();
+	var surroundingSpaces = this.space.getNeighborhood();
 
-	var unoccupiedCells = [];
-	for (var i in surroundingCells.cells) {
-		if (surroundingCells.cells[i].brood == 0) {
-			unoccupiedCells.push(surroundingCells.cells[i]);
+	var unoccupiedSpaces = [];
+	for (var i in surroundingSpaces) {
+		if (!surroundingSpaces.cell) {
+			unoccupiedCells.push(surroundingCells[i]);
 		}
 	}
 	if (unoccupiedCells.length > 0) {
 		return unoccupiedCells[randomInt(unoccupiedCells.length)];
 	}
+	// implicit undefined return
 };
 // Divide into a given cell
 Cell.prototype.divide = function(cell) {

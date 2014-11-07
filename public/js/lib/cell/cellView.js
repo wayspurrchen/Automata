@@ -1,15 +1,15 @@
 function CellView(game, cell, fill) {
 	this.game = game;
-	var ctx = this.game.bufferContext;
+	var ctx = this.game.artist.bufferContext;
 	this.cell = cell;
 
 	this.draw = function() {
 		ctx.fillStyle = this.fillStyle;
 		ctx.fillRect(
-			this.cell.x,
-			this.cell.y,
-			this.cell.x * this.game.Constants.GRID_CELL_SIZE,
-			this.cell.y * this.game.Constants.GRID_CELL_SIZE
+			this.cell.space.x,
+			this.cell.space.y,
+			this.cell.space.x * this.game.Constants.GRID_CELL_SIZE,
+			this.cell.space.y * this.game.Constants.GRID_CELL_SIZE
 		);
 	};
 }
