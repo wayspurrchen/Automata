@@ -1,5 +1,5 @@
 function AutomataConstants() {
-	this.GRID_WIDTH  = 25;
-	this.GRID_HEIGHT = 25;
-	this.GRID_CELL_SIZE = 10;
+	this.GRID_WIDTH  = 80;
+	this.GRID_HEIGHT = 80;
+	this.GRID_CELL_SIZE = 5;
 }

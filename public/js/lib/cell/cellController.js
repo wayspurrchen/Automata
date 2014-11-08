@@ -31,11 +31,10 @@ function CellController(game) {
 			allCells[i].moved = false;
 		}
 
-		// Shuffle up cells so we don't run into bottom-right power
-		// due to iteration order
-		while (allCells.length > 0) {
-			var cell = allCells.splice(randomInt(allCells.length), 1)[0];
-			this.cellTurn(cell);
+		// Take turns randomly	
+		var random = _.shuffle(allCells);
+		for (var i = 0; i < random.length; i++) {
+			this.cellTurn(random[i]);
 		}
 	};
 	// Take a turn for the cell. Check if we've been conquered, if we

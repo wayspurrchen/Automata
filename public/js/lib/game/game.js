@@ -13,9 +13,7 @@ function AutomataGame(containerSelector) {
 	this.artist = new GameArtist(this);
 	this.ui = new GameUILayer(this);
 
-	// TODO: color available logic
-
-	this.speed = 100;
+	this.speed = 10;
 
 	this.grid = new Grid(
 		this,

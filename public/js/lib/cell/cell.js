@@ -80,11 +80,11 @@ Cell.prototype.getSurroundingCells = function() {
 // Gets a random, unoccupied neighbor space
 Cell.prototype.getRandomUnoccupiedNeighbor = function() {
 	var surroundingSpaces = this.space.getNeighborhood();
-	delete surroundingSpaces.center;
-	delete surroundingSpaces.topLeft;
-	delete surroundingSpaces.topRight;
-	delete surroundingSpaces.bottomLeft;
-	delete surroundingSpaces.bottomRight;
+	// delete surroundingSpaces.center;
+	// delete surroundingSpaces.topLeft;
+	// delete surroundingSpaces.topRight;
+	// delete surroundingSpaces.bottomLeft;
+	// delete surroundingSpaces.bottomRight;
 
 	var unoccupiedSpaces = [];
 	for (var i in surroundingSpaces) {
