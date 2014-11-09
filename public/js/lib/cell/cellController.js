@@ -24,17 +24,35 @@ function CellController(game) {
 		return cellDistributions;
 	};
 	// Execute a turn, iterating through each individual cell.
-	this.turn = function() {
+	// If "interval" is passed, we iterate through the cells
+	// one at a time, and then call a final callback.
+	this.turn = function(interval, callback) {
+		var me = this;
 		// Reset turns on cells anew
-		var allCells = this.getAllCells();
+		var allCells = _.shuffle(this.getAllCells());
 		for (var i = 0; i < allCells.length; i++) {
 			allCells[i].moved = false;
+			if (interval) {
+				(function(i) {
+					setTimeout(function() {
+						// Remove any broods that don't exist anymore
+						var distributions = me.game.cellController.getCellDistribution();
+						for (var j = 0; j < distributions.length; j++) {
+							if (distributions[j].count == 0) {
+								me.game.controller.removeBrood(distributions[j].brood);
+							}
+						}
+						me.cellTurn(allCells[i]);
+						me.game.ui.renderBroodSquares(distributions);
+						me.game.artist.draw();
+					});
+				})(i);
+			} else {
+				this.cellTurn(allCells[i]);
+			}
 		}
-
-		// Take turns randomly	
-		var random = _.shuffle(allCells);
-		for (var i = 0; i < random.length; i++) {
-			this.cellTurn(random[i]);
+		if (interval) {
+			setTimeout(callback, i * interval)
 		}
 	};
 	// Take a turn for the cell. Check if we've been conquered, if we
@@ -44,13 +62,13 @@ function CellController(game) {
 		var surroundings = cell.getSurroundingCells();
 
 		// Check for conquer scenario
-		var conquered = this.cellConquered(cell, surroundings);
-		if (conquered.result) {
-			var brood = this.game.controller.getBrood(conquered.conquerorColor);
-			cell.setBrood(brood);
-			cell.moved = true;
-			return;
-		}
+		// var conquered = this.cellConquered(cell, surroundings);
+		// if (conquered.result) {
+		// 	var brood = this.game.controller.getBrood(conquered.conquerorColor);
+		// 	cell.setBrood(brood);
+		// 	cell.moved = true;
+		// 	return;
+		// }
 
 		// Act on fight scenario
 		var fight = this.cellFight(cell, surroundings);

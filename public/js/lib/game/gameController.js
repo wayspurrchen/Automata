@@ -50,6 +50,23 @@ function GameController(game) {
 			this.turnTimeout = setTimeout(this.turn.bind(this), this.game.speed);
 		}
 	};
+	this.turnCellInterval = function() {
+		// Clear the canvas
+		this.game.artist.clearCanvas();
+
+		// Make our cells execute their logic
+		this.game.cellController.turn(800, function() {
+			console.log('callback');
+			// Increment generation
+			this.game.generation++;
+
+			// If we haven't paused the game in the interim, 
+			if (this.game.playing) {
+				// Set up the next turn
+				this.turnTimeout = setTimeout(this.turnCellInterval.bind(this), this.game.speed);
+			}
+		}.bind(this));
+	};
 	this.play = function() {
 		if (!this.game.playing) {
 			clearTimeout(this.turnTimeout);

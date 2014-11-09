@@ -13,7 +13,7 @@ function AutomataGame(containerSelector) {
 	this.artist = new GameArtist(this);
 	this.ui = new GameUILayer(this);
 
-	this.speed = 10;
+	this.speed = 100;
 
 	this.grid = new Grid(
 		this,
@@ -31,23 +31,56 @@ function AutomataGame(containerSelector) {
 		var gbrood = this.controller.addBrood('#00ff00');
 		var bbrood = this.controller.addBrood('#0000ff');
 		var blbrood = this.controller.addBrood('#000000');
-		var topLeftSpace = this.grid.getSpace(0, 0);
-		var topRightSpace = this.grid.getSpace(
-			this.Constants.GRID_WIDTH - 1,
-			0
-		);
-		var bottomRightSpace = this.grid.getSpace(
-			this.Constants.GRID_WIDTH - 1,
-			this.Constants.GRID_HEIGHT - 1
-		);
-		var bottomLeftSpace = this.grid.getSpace(
-			0,
-			this.Constants.GRID_HEIGHT - 1
-		);
-		this.cellController.createCell(rbrood, topLeftSpace, false);
-		this.cellController.createCell(blbrood, topRightSpace, false);
-		this.cellController.createCell(gbrood, bottomRightSpace, false);
-		this.cellController.createCell(bbrood, bottomLeftSpace, false);
+		for (var i = 0; i < this.Constants.GRID_WIDTH / 2; i++) {
+			for (var j = 0; j < this.Constants.GRID_HEIGHT / 2; j++) {
+				var space = this.grid.getSpace(i, j);
+				this.cellController.createCell(rbrood, space, false);
+			}
+		}
+		for (var i = 0; i < this.Constants.GRID_WIDTH / 2; i++) {
+			for (var j = 0; j < this.Constants.GRID_HEIGHT / 2; j++) {
+				space = this.grid.getSpace(
+					i + (this.Constants.GRID_WIDTH / 2),
+					j + (this.Constants.GRID_HEIGHT / 2)
+				);
+				this.cellController.createCell(gbrood, space, false);
+			}
+		}
+		for (var i = 0; i < this.Constants.GRID_WIDTH / 2; i++) {
+			for (var j = 0; j < this.Constants.GRID_HEIGHT / 2; j++) {
+				space = this.grid.getSpace(
+					i,
+					j + (this.Constants.GRID_HEIGHT / 2)
+				);
+				this.cellController.createCell(blbrood, space, false);
+			}
+		}
+		for (var i = 0; i < this.Constants.GRID_WIDTH / 2; i++) {
+			for (var j = 0; j < this.Constants.GRID_HEIGHT / 2; j++) {
+				space = this.grid.getSpace(
+					i + (this.Constants.GRID_WIDTH / 2),
+					j
+				);
+				this.cellController.createCell(bbrood, space, false);
+			}
+		}
+		// var topLeftSpace = this.grid.getSpace(0, 0);
+		// var topRightSpace = this.grid.getSpace(
+		// 	this.Constants.GRID_WIDTH - 1,
+		// 	0
+		// );
+		// var bottomRightSpace = this.grid.getSpace(
+		// 	this.Constants.GRID_WIDTH - 1,
+		// 	this.Constants.GRID_HEIGHT - 1
+		// );
+		// var bottomLeftSpace = this.grid.getSpace(
+		// 	0,
+		// 	this.Constants.GRID_HEIGHT - 1
+		// );
+		// this.cellController.createCell(bbrood, topLeftSpace, false);
+		// this.cellController.createCell(gbrood, topRightSpace, false);
+		// this.cellController.createCell(blbrood, bottomRightSpace, false);
+		// this.cellController.createCell(rbrood, bottomLeftSpace, false);
 
 		this.controller.play();
 	};
