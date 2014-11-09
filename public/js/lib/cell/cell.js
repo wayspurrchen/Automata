@@ -54,7 +54,7 @@ Cell.prototype.getSurroundingCells = function() {
 		surroundingCells.cells.left = leftSpace.cell;
 	}
 	if (bottomSpace) {
-		surroundingCells.cells.bottom = bottomSpace.ell;
+		surroundingCells.cells.bottom = bottomSpace.cell;
 	}
 	if (topSpace) {
 		surroundingCells.cells.top = topSpace.cell;
