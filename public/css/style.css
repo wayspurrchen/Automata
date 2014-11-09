@@ -1,8 +1,6 @@
 main {
 	text-align: center;
 }
-.brood-picker {
-}
 .brood-square {
 	display: inline-block;
 	width: 30px;
@@ -32,11 +30,16 @@ main {
 .automata {
 	text-align: center;
 }
+.title {
+	font-size: 70px;
+	font-weight: 700;
+}
 
 .controls {
 	height: 50px;
 }
 .controls .speed-input {
+	width: 100px;
 	height: 100%;
 }
 .controls button {
