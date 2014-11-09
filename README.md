@@ -4,7 +4,7 @@ A pixel warfare, near-zero-player game. Like Conway's Game of Life, but with vio
 
 ![](http://i.imgur.com/6PFSSdx.gif)
 
-See it in action at [www.automata.website](www.automata.website).
+See it in action at [www.automata.website](http://www.automata.website).
 
 ## Details
 
